@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABOT — Como funcionaria a automação de diagnóstico de plataformas digitais</title>
+<meta name="description" content="ABOT é um projeto acadêmico que propõe automatizar buscas em plataformas digitais (Instagram, TikTok, Facebook Ads) e transformar os dados coletados em relatórios simples. Veja como a arquitetura e as integrações funcionariam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde-escuro:#0E3B2E;
+    --verde-bot:#27AE60;
+    --verde-claro:#E7F5EC;
+    --creme:#F7F5F1;
+    --branco:#FFFFFF;
+    --texto:#162420;
+    --texto-suave:#5B6B63;
+    --borda:#E2E7E3;
+    --azul:#3B82C4;
+    --roxo:#8B6FD9;
+    --footer-texto:#9CC2B0;
+    --footer-texto-fraco:#7E9C8E;
+
+    --fonte-display:'Unbounded',sans-serif;
+    --fonte-corpo:'Sora',sans-serif;
+    --fonte-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--fonte-corpo);color:var(--texto);background:var(--branco);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}
+  .container{max-width:1180px;margin:0 auto;padding:0 24px}
+  a{color:inherit}
+  img{display:block}
+
+  /* ===== HEADER ===== */
+  header{position:sticky;top:0;z-index:100;background:var(--branco);border-bottom:1px solid var(--borda)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:72px;gap:32px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .logo-mark{width:34px;height:34px;border-radius:50%;background:var(--verde-escuro);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+  .logo-mark::after{content:'';position:absolute;width:14px;height:14px;border:2px solid var(--branco);border-radius:50%;left:6px;top:6px}
+  .logo-mark::before{content:'';position:absolute;width:8px;height:2px;background:var(--branco);transform:rotate(45deg);right:6px;bottom:8px;border-radius:2px}
+  .logo-mark span{width:13px;height:13px;border-radius:50%;background:var(--verde-bot);position:absolute;left:8.5px;top:8.5px}
+  .logo-texto{font-family:var(--fonte-display);font-weight:700;font-size:1.2rem;letter-spacing:.02em;color:var(--verde-escuro)}
+  .logo-texto small{display:block;font-family:var(--fonte-mono);font-size:.55rem;letter-spacing:.18em;color:var(--verde-bot);font-weight:500;margin-top:-2px}
+
+  .nav-links{display:flex;gap:30px;list-style:none;align-items:center}
+  .nav-links a{font-size:.92rem;font-weight:600;text-decoration:none;color:var(--texto);transition:color .15s}
+  .nav-links a:hover{color:var(--verde-bot)}
+  .nav-acoes{display:flex;align-items:center;gap:18px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:6px;font-weight:700;font-size:.92rem;text-decoration:none;border:none;cursor:pointer;font-family:var(--fonte-corpo);padding:12px 24px;transition:transform .15s,box-shadow .2s,background .15s}
+  .btn-primario{background:var(--verde-bot);color:var(--branco)}
+  .btn-primario:hover{background:#229954;transform:translateY(-1px);box-shadow:0 6px 18px rgba(39,174,96,.35)}
+  .btn-fora{background:transparent;border:1.5px solid var(--verde-escuro);color:var(--verde-escuro)}
+  .btn-fora:hover{background:var(--verde-escuro);color:var(--branco)}
+  .btn-grande{padding:16px 32px;font-size:1rem;border-radius:8px}
+
+  /* ===== HERO ===== */
+  .hero{background:var(--creme);padding:72px 0;overflow:hidden}
+  .hero-conteudo{text-align:center;max-width:780px;margin:0 auto}
+  .selo{display:inline-flex;align-items:center;gap:8px;background:var(--verde-claro);color:var(--verde-escuro);font-family:var(--fonte-mono);font-size:.78rem;font-weight:500;letter-spacing:.05em;padding:7px 16px;border-radius:99px;margin-bottom:24px}
+  .selo .ponto{width:7px;height:7px;border-radius:50%;background:var(--verde-bot)}
+  h1{font-family:var(--fonte-display);font-weight:800;font-size:clamp(2.1rem,5.2vw,3.6rem);line-height:1.12;letter-spacing:-.01em;margin-bottom:20px;color:var(--verde-escuro)}
+  h1 .destaque{color:var(--verde-bot)}
+  .hero-conteudo p{font-size:1.1rem;color:var(--texto-suave);max-width:58ch;margin:0 auto 32px}
+  .hero-acoes{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .hero-aviso{margin-top:18px;font-family:var(--fonte-mono);font-size:.78rem;color:var(--texto-suave)}
+
+  /* ===== BARRA DE CONFIANÇA ===== */
+  .confianca{padding:40px 0;border-bottom:1px solid var(--borda)}
+  .confianca p{text-align:center;font-family:var(--fonte-mono);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--texto-suave);margin-bottom:28px}
+  .confianca-grid{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;opacity:.6}
+  .confianca-grid span{font-family:var(--fonte-display);font-weight:700;font-size:1rem;color:var(--texto-suave)}
+
+  /* ===== SEÇÕES ===== */
+  section{padding:90px 0}
+  .cabecalho-secao{max-width:700px;margin:0 auto 56px;text-align:center}
+  .eyebrow{font-family:var(--fonte-mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--verde-bot);font-weight:600;margin-bottom:14px;display:block}
+  h2{font-family:var(--fonte-display);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.25;color:var(--verde-escuro);margin-bottom:14px}
+  .cabecalho-secao p,.cabecalho-secao.esq p{color:var(--texto-suave);font-size:1.05rem}
+
+  /* Problema — cards */
+  .problema{background:var(--creme)}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .cartao{background:var(--branco);border:1px solid var(--borda);border-radius:14px;padding:30px;transition:transform .2s,box-shadow .2s}
+  .cartao:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(14,59,46,.08)}
+  .cartao .icone{width:46px;height:46px;border-radius:10px;background:var(--verde-claro);display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:18px}
+  .cartao h3{font-family:var(--fonte-display);font-size:1.05rem;font-weight:700;margin-bottom:10px;color:var(--verde-escuro)}
+  .cartao p{color:var(--texto-suave);font-size:.95rem}
+
+  /* ===== ARQUITETURA (diagrama interativo) ===== */
+  .arquitetura{background:var(--verde-escuro);color:var(--branco)}
+  .arquitetura .eyebrow{color:#7FE0AC}
+  .arquitetura h2{color:var(--branco)}
+  .arquitetura .cabecalho-secao p{color:#BFE0D2}
+
+  .diagrama{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;align-items:stretch;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;background:rgba(255,255,255,.03)}
+  .diagrama-etapa{padding:26px 22px;border-right:1px solid rgba(255,255,255,.1);cursor:pointer;transition:background .15s;position:relative}
+  .diagrama-etapa:last-child{border-right:none}
+  .diagrama-etapa:hover,.diagrama-etapa.ativo{background:rgba(39,174,96,.14)}
+  .diagrama-etapa .num{font-family:var(--fonte-mono);font-size:.78rem;color:#7FE0AC;display:block;margin-bottom:10px}
+  .diagrama-etapa h3{font-family:var(--fonte-display);font-size:.98rem;font-weight:700;margin-bottom:8px}
+  .diagrama-etapa p{font-size:.86rem;color:#BFE0D2}
+  .diagrama-etapa::after{
+    content:'→';position:absolute;top:50%;right:-12px;transform:translateY(-50%);
+    color:#7FE0AC;font-size:1.1rem;z-index:2;
+  }
+  .diagrama-etapa:last-child::after{display:none}
+
+  .detalhe-etapa{margin-top:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:26px;display:none}
+  .detalhe-etapa.ativo{display:block}
+  .detalhe-etapa h4{font-family:var(--fonte-display);font-size:1.05rem;margin-bottom:10px;color:#7FE0AC}
+  .detalhe-etapa p{color:#BFE0D2;font-size:.95rem;margin-bottom:14px;max-width:70ch}
+  .detalhe-etapa ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .detalhe-etapa li{font-size:.9rem;color:#E7F5EC;display:flex;gap:10px}
+  .detalhe-etapa li::before{content:'›';color:#7FE0AC;font-weight:700}
+
+  /* ===== INTEGRAÇÕES POR PLATAFORMA ===== */
+  .integracoes{background:var(--creme)}
+  .abas-plataforma{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+  .aba-plataforma{
+    display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:99px;
+    border:1.5px solid var(--borda);background:var(--branco);font-weight:700;font-size:.88rem;
+    cursor:pointer;transition:border-color .15s,color .15s,background .15s;color:var(--texto-suave);
+  }
+  .aba-plataforma .bolinha{width:9px;height:9px;border-radius:50%}
+  .aba-plataforma.ativa{border-color:var(--verde-bot);color:var(--verde-escuro);background:var(--verde-claro)}
+
+  .painel-integracao{display:none;background:var(--branco);border:1px solid var(--borda);border-radius:14px;overflow:hidden}
+  .painel-integracao.ativo{display:grid;grid-template-columns:1.1fr 1fr}
+  .integracao-info{padding:30px 32px}
+  .integracao-info h3{font-family:var(--fonte-display);font-size:1.15rem;color:var(--verde-escuro);margin-bottom:10px}
+  .integracao-info p{color:var(--texto-suave);font-size:.95rem;margin-bottom:16px}
+  .integracao-info .tabela-mini{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:6px}
+  .integracao-info .tabela-mini td{padding:8px 0;border-bottom:1px dashed var(--borda);vertical-align:top}
+  .integracao-info .tabela-mini td:first-child{color:var(--texto-suave);font-family:var(--fonte-mono);font-size:.78rem;white-space:nowrap;padding-right:14px}
+  .integracao-info .tabela-mini tr:last-child td{border-bottom:none}
+
+  .integracao-codigo{background:#0A2D22;color:#E7F5EC;padding:24px;font-family:var(--fonte-mono);font-size:.8rem;overflow-x:auto}
+  .integracao-codigo .topo-codigo{display:flex;gap:8px;margin-bottom:14px}
+  .integracao-codigo .topo-codigo span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.18)}
+  .integracao-codigo pre{white-space:pre;line-height:1.7}
+  .integracao-codigo .com{color:#7E9C8E}
+  .integracao-codigo .chv{color:#7FE0AC}
+  .integracao-codigo .str{color:#F2D49A}
+  .integracao-codigo .met{color:#A6D8FF}
+
+
+  /* ===== CANVAS RESUMO ===== */
+  .canvas-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .canvas-card{border:1px solid var(--borda);border-radius:14px;padding:24px;background:var(--branco)}
+  .canvas-card h4{font-family:var(--fonte-display);font-size:.95rem;color:var(--verde-escuro);margin-bottom:10px}
+  .canvas-card ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .canvas-card li{font-size:.88rem;color:var(--texto-suave);display:flex;gap:8px}
+  .canvas-card li::before{content:'•';color:var(--verde-bot);font-weight:700}
+
+  /* ===== COMPARATIVO ===== */
+  .tabela-wrap{overflow-x:auto;border:1px solid var(--borda);border-radius:14px}
+  table.comparativo{width:100%;border-collapse:collapse;min-width:640px}
+  table.comparativo th,table.comparativo td{padding:18px 22px;text-align:left;font-size:.92rem;border-bottom:1px solid var(--borda)}
+  table.comparativo thead th{font-family:var(--fonte-display);font-weight:700;color:var(--verde-escuro);background:var(--creme);font-size:.95rem}
+  table.comparativo th.col-abot,table.comparativo td.col-abot{background:var(--verde-claro)}
+  table.comparativo thead th.col-abot{color:var(--verde-escuro)}
+  table.comparativo tbody tr:last-child td{border-bottom:none}
+  table.comparativo td:first-child{color:var(--texto-suave);font-weight:600}
+  .sim{color:var(--verde-bot);font-weight:700}
+  .nao{color:var(--texto-suave)}
+
+  /* ===== CTA FINAL ===== */
+  .cta-final{background:var(--verde-escuro);color:var(--branco);text-align:center;position:relative;overflow:hidden}
+  .cta-final::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 360px at 50% 0%,rgba(39,174,96,.25),transparent 70%);pointer-events:none}
+  .cta-final h2{color:var(--branco);max-width:620px;margin:0 auto 14px}
+  .cta-final p{color:#BFE0D2;max-width:560px;margin:0 auto 32px;font-size:1.05rem}
+  .cta-acoes{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+  /* ===== FOOTER ===== */
+  footer{background:#0A2D22;color:#BFE0D2;padding:56px 0 28px}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+  .footer-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .footer-logo .logo-texto{color:var(--branco)}
+  .footer-logo .logo-texto small{color:#7FE0AC}
+  footer p.desc{font-size:.9rem;color:var(--footer-texto);max-width:32ch}
+  footer h4{font-family:var(--fonte-display);font-size:.85rem;color:var(--branco);margin-bottom:16px;letter-spacing:.04em}
+  footer ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  footer a{font-size:.88rem;color:var(--footer-texto);text-decoration:none}
+  footer a:hover{color:var(--branco)}
+  .footer-base{border-top:1px solid rgba(255,255,255,.08);padding-top:24px;font-size:.82rem;color:var(--footer-texto-fraco);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+  /* ===== CAPACIDADES — painéis sobre fundo escuro mantêm texto cinza ===== */
+  #capacidades .painel-integracao{color:var(--texto)}
+  #capacidades .integracao-info h3{color:var(--verde-escuro)}
+  #capacidades .integracao-info p,
+  #capacidades .tabela-mini td{color:var(--texto-suave)}
+
+  /* ===== RESPONSIVO ===== */
+  @media (max-width:900px){
+    .nav-links{display:none}
+    .grid-3,.canvas-resumo{grid-template-columns:1fr}
+    .diagrama{grid-template-columns:1fr 1fr}
+    .diagrama-etapa:nth-child(2)::after,.diagrama-etapa:nth-child(4)::after{display:none}
+    .diagrama-etapa:nth-child(1),.diagrama-etapa:nth-child(2){border-bottom:1px solid rgba(255,255,255,.1)}
+    .painel-integracao.ativo{grid-template-columns:1fr}
+    .footer-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:600px){
+    .diagrama{grid-template-columns:1fr}
+    .diagrama-etapa{border-right:none;border-bottom:1px solid rgba(255,255,255,.1)}
+    .diagrama-etapa::after{display:none}
+    .footer-grid{grid-template-columns:1fr}
+  }
+
+  a:focus-visible,button:focus-visible{outline:2px solid var(--verde-bot);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <nav>
+      <a href="#" class="logo">
+        <span class="logo-mark"><span></span></span>
+        <span class="logo-texto">ABOT<small>algorithm bot</small></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#problema">O problema</a></li>
+        <li><a href="#arquitetura">Como funcionaria</a></li>
+        <li><a href="#integracoes">Integrações</a></li>
+        <li><a href="#capacidades">Capacidades</a></li>
+        <li><a href="#comparativo">Comparativo</a></li>
+      </ul>
+      <div class="nav-acoes">
+        <a href="#contato" class="btn btn-primario">Entenda o projeto</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-conteudo">
+        <span class="selo"><span class="ponto"></span> Projeto acadêmico — Engenharia de Software, UniCesumar</span>
+        <h1>Sua presença digital gera dados. <span class="destaque">O ABOT propõe transformá-los em respostas.</span></h1>
+        <p>O ABOT é uma proposta de automação que usaria bots para verificar, em diferentes plataformas, se um conteúdo ou anúncio está realmente visível — e organizaria esses dados em relatórios simples, sem jargão técnico.</p>
+        <div class="hero-acoes">
+          <a href="#arquitetura" class="btn btn-primario btn-grande">Ver como funcionaria</a>
+          <a href="#integracoes" class="btn btn-fora btn-grande">Ver as integrações de API</a>
+        </div>
+        <p class="hero-aviso">Este site é informativo: apresenta o conceito, a arquitetura proposta e as integrações planejadas — não é um serviço em operação.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIANÇA / PÚBLICO -->
+  <section class="confianca">
+    <div class="container">
+      <p>Pensado para quem vive de presença digital</p>
+      <div class="confianca-grid">
+        <span>Criadores de conteúdo</span>
+        <span>Lojas no Instagram</span>
+        <span>Agências de marketing</span>
+        <span>Infoprodutores</span>
+        <span>Pequenos negócios locais</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEMA -->
+  <section class="problema" id="problema">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">O problema</span>
+        <h2>Seus números caíram. As plataformas não vão te explicar por quê.</h2>
+        <p>Sem ferramentas, qualquer queda de alcance parece um mistério — e cada plataforma tem seu próprio algoritmo, suas próprias regras e zero transparência.</p>
+      </div>
+      <div class="grid-3">
+        <div class="cartao">
+          <div class="icone">📉</div>
+          <h3>Alcance caiu sem aviso</h3>
+          <p>O conteúdo está performando pior, mas não há como saber se é o algoritmo, o horário, o formato ou a concorrência.</p>
+        </div>
+        <div class="cartao">
+          <div class="icone">🧩</div>
+          <h3>Dados demais, clareza nenhuma</h3>
+          <p>As plataformas mostram métricas soltas, em painéis diferentes, exigindo tempo e conhecimento técnico para cruzar tudo.</p>
+        </div>
+        <div class="cartao">
+          <div class="icone">🚫</div>
+          <h3>Sem provas para reclamar</h3>
+          <p>Há suspeita de que um anúncio está sendo limitado injustamente, mas não há como comprovar isso para abrir um chamado.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARQUITETURA / COMO FUNCIONARIA -->
+  <section class="arquitetura" id="arquitetura">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">Por dentro do ABOT</span>
+        <h2>Como a automação funcionaria, passo a passo</h2>
+        <p>Clique em cada etapa do fluxo para ver o que aconteceria por trás dela — do pedido do usuário até o relatório final.</p>
+      </div>
+
+      <div class="diagrama" id="diagrama">
+        <div class="diagrama-etapa ativo" data-etapa="1">
+          <span class="num">01 · Entrada</span>
+          <h3>Usuário informa o alvo</h3>
+          <p>Link do post, anúncio, @perfil e a plataforma desejada.</p>
+        </div>
+        <div class="diagrama-etapa" data-etapa="2">
+          <span class="num">02 · Orquestração</span>
+          <h3>Fila de varreduras</h3>
+          <p>Um job agendado decide quando e com qual "adaptador" rodar a busca.</p>
+        </div>
+        <div class="diagrama-etapa" data-etapa="3">
+          <span class="num">03 · Coleta</span>
+          <h3>Adaptadores por plataforma</h3>
+          <p>Cada plataforma tem seu próprio módulo de integração e sua própria API.</p>
+        </div>
+        <div class="diagrama-etapa" data-etapa="4">
+          <span class="num">04 · Diagnóstico</span>
+          <h3>Normalização e relatório</h3>
+          <p>Os dados de todas as plataformas são unificados em um formato comum e exibidos em um painel só.</p>
+        </div>
+      </div>
+
+      <div class="detalhe-etapa ativo" data-detalhe="1">
+        <h4>01 · Entrada — o que o usuário informa</h4>
+        <p>O fluxo começa com poucos dados: a URL ou identificador do conteúdo (post, anúncio ou perfil), a plataforma de origem e, opcionalmente, termos de busca relacionados (ex.: nome do produto, hashtags). É a partir dessas informações que o sistema decide qual "adaptador" de API acionar.</p>
+        <ul>
+          <li>Plataforma: Instagram, TikTok, Facebook/Instagram Ads, YouTube...</li>
+          <li>Identificador: URL do post, ID do anúncio ou @usuário</li>
+          <li>Termos de busca (opcional): para simular como um usuário encontraria o conteúdo</li>
+          <li>Frequência: varredura única ou agendada (ex.: diária)</li>
+        </ul>
+      </div>
+
+      <div class="detalhe-etapa" data-detalhe="2">
+        <h4>02 · Orquestração — a fila de varreduras</h4>
+        <p>Um serviço de agendamento (worker) organiza as solicitações em uma fila e as distribui ao longo do tempo, para não sobrecarregar as APIs externas e respeitar limites de requisições (rate limits). Cada item da fila carrega a plataforma de destino, o que define qual adaptador será chamado.</p>
+        <ul>
+          <li>Fila de tarefas (ex.: Celery, BullMQ ou similar) com prioridades</li>
+          <li>Controle de limite de requisições por plataforma e por usuário</li>
+          <li>Reprocessamento automático em caso de falha temporária da API externa</li>
+          <li>Registro de logs de cada tentativa, para auditoria do relatório final</li>
+        </ul>
+      </div>
+
+      <div class="detalhe-etapa" data-detalhe="3">
+        <h4>03 · Coleta — um adaptador por plataforma</h4>
+        <p>Esta é a parte central da proposta: cada plataforma digital tem sua própria API, com autenticação, endpoints e formatos de resposta diferentes. O ABOT precisaria de um "adaptador" dedicado para cada uma, todos seguindo uma interface comum (mesmas funções de entrada e saída), para que o restante do sistema não precise saber os detalhes de cada API.</p>
+        <ul>
+          <li>Meta Graph API (Instagram/Facebook): dados de posts, contas e anúncios</li>
+          <li>TikTok for Developers (Display API / Research API): vídeos e métricas públicas</li>
+          <li>YouTube Data API: vídeos, visualizações e posição em resultados de busca</li>
+          <li>Cada adaptador converte a resposta da API para um formato interno único</li>
+        </ul>
+      </div>
+
+      <div class="detalhe-etapa" data-detalhe="4">
+        <h4>04 · Diagnóstico — normalização e relatório</h4>
+        <p>Depois que os adaptadores retornam os dados em um formato comum, um serviço de normalização calcula as métricas do relatório: quantas tentativas foram feitas, em quantas o conteúdo apareceu, qual a taxa de visibilidade e um diagnóstico textual simples. Esse resultado é o que seria exibido no painel do usuário.</p>
+        <ul>
+          <li>Cálculo de taxa de visibilidade e variação no tempo</li>
+          <li>Classificação simples: boa visibilidade, alcance limitado ou crítico</li>
+          <li>Armazenamento do histórico para comparação entre períodos</li>
+          <li>Exportação do relatório (ex.: PDF) para uso interno ou para reportar à plataforma</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTEGRAÇÕES POR PLATAFORMA -->
+  <section class="integracoes" id="integracoes">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">Integrações planejadas</span>
+        <h2>Cada plataforma, uma API diferente</h2>
+        <p>O maior desafio técnico do ABOT não é o relatório em si — é lidar com APIs distintas, cada uma com autenticação e estrutura de dados próprias. Veja como cada integração funcionaria.</p>
+      </div>
+
+      <div class="abas-plataforma" id="abas-plataforma">
+        <button class="aba-plataforma ativa" data-plataforma="instagram"><span class="bolinha" style="background:#C13584"></span> Instagram / Meta</button>
+        <button class="aba-plataforma" data-plataforma="tiktok"><span class="bolinha" style="background:#111"></span> TikTok</button>
+        <button class="aba-plataforma" data-plataforma="youtube"><span class="bolinha" style="background:#FF0000"></span> YouTube</button>
+        <button class="aba-plataforma" data-plataforma="ads"><span class="bolinha" style="background:var(--azul)"></span> Meta Ads</button>
+        <button class="aba-plataforma" data-plataforma="analytics"><span class="bolinha" style="background:#F2994A"></span> Google Analytics</button>
+        <button class="aba-plataforma" data-plataforma="searchconsole"><span class="bolinha" style="background:#4285F4"></span> Search Console</button>
+      </div>
+
+      <!-- Instagram -->
+      <div class="painel-integracao ativo" data-painel="instagram">
+        <div class="integracao-info">
+          <h3>Meta Graph API (Instagram)</h3>
+          <p>Para verificar a presença de um post ou perfil, o adaptador usaria a Graph API da Meta, autenticada via token de acesso vinculado a uma conta de negócios do Instagram conectada a uma página do Facebook.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>OAuth 2.0 + token de longa duração (conta business)</td></tr>
+            <tr><td>Endpoint base</td><td>graph.facebook.com/v19.0</td></tr>
+            <tr><td>Dados retornados</td><td>alcance, impressões, engajamento do post</td></tr>
+            <tr><td>Limite</td><td>cota de chamadas por hora por aplicativo</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/instagram.js</span>
+<span class="chv">async function</span> buscarPost(postId, token) {
+  <span class="chv">const</span> url = <span class="str">`https://graph.facebook.com/v19.0/${postId}` +
+    `?fields=permalink,like_count,comments_count,` +
+    `insights.metric(reach,impressions)` +
+    `&access_token=${token}`</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url);
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+
+  <span class="chv">return</span> {
+    encontrado: <span class="chv">true</span>,
+    alcance: dados.insights?.data[<span class="str">0</span>]?.values[<span class="str">0</span>]?.value,
+    engajamento: dados.like_count + dados.comments_count
+  };
+}</pre>
+        </div>
+      </div>
+
+      <!-- TikTok -->
+      <div class="painel-integracao" data-painel="tiktok">
+        <div class="integracao-info">
+          <h3>TikTok for Developers</h3>
+          <p>O adaptador do TikTok usaria a API oficial de desenvolvedores para consultar vídeos públicos de uma conta e suas métricas básicas, autenticando via OAuth 2.0 com escopo de leitura de vídeos.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>OAuth 2.0 (escopo video.list)</td></tr>
+            <tr><td>Endpoint base</td><td>open.tiktokapis.com/v2</td></tr>
+            <tr><td>Dados retornados</td><td>visualizações, curtidas, compartilhamentos</td></tr>
+            <tr><td>Limite</td><td>cota diária por aplicativo registrado</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/tiktok.js</span>
+<span class="chv">async function</span> buscarVideo(videoId, token) {
+  <span class="chv">const</span> url = <span class="str">'https://open.tiktokapis.com/v2/video/query/'</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url, {
+    method: <span class="str">'POST'</span>,
+    headers: {
+      <span class="str">'Authorization'</span>: <span class="str">`Bearer ${token}`</span>,
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>
+    },
+    body: JSON.<span class="met">stringify</span>({
+      filters: { video_ids: [videoId] },
+      fields: [<span class="str">'view_count'</span>,<span class="str">'like_count'</span>,<span class="str">'share_count'</span>]
+    })
+  });
+
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+  <span class="chv">return</span> { encontrado: dados.data.videos.length > <span class="str">0</span>,
+           metricas: dados.data.videos[<span class="str">0</span>] };
+}</pre>
+        </div>
+      </div>
+
+      <!-- YouTube -->
+      <div class="painel-integracao" data-painel="youtube">
+        <div class="integracao-info">
+          <h3>YouTube Data API v3</h3>
+          <p>Para verificar se um vídeo aparece em uma busca, o adaptador chamaria o endpoint de busca pública da API, comparando o ID do vídeo do cliente com os resultados retornados para os termos informados.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>API key (chave de aplicação)</td></tr>
+            <tr><td>Endpoint base</td><td>www.googleapis.com/youtube/v3</td></tr>
+            <tr><td>Dados retornados</td><td>posição na busca, visualizações, curtidas</td></tr>
+            <tr><td>Limite</td><td>cota diária de "unidades" por chave</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/youtube.js</span>
+<span class="chv">async function</span> buscarPosicao(termoBusca, videoId, apiKey) {
+  <span class="chv">const</span> url = <span class="str">`https://www.googleapis.com/youtube/v3/search` +
+    `?part=snippet&q=${encodeURIComponent(termoBusca)}` +
+    `&maxResults=10&key=${apiKey}`</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url);
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+
+  <span class="chv">const</span> posicao = dados.items.findIndex(
+    item => item.id.videoId === videoId
+  );
+
+  <span class="chv">return</span> { encontrado: posicao !== -<span class="str">1</span>, posicao: posicao + <span class="str">1</span> };
+}</pre>
+        </div>
+      </div>
+
+      <!-- Meta Ads -->
+      <div class="painel-integracao" data-painel="ads">
+        <div class="integracao-info">
+          <h3>Meta Marketing API (anúncios)</h3>
+          <p>Para anúncios, o adaptador consultaria diretamente os insights da campanha vinculada à conta de anúncios do cliente, trazendo dados oficiais de entrega — úteis para comparar com o que o usuário percebe no dia a dia.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>OAuth 2.0 (conta de anúncios)</td></tr>
+            <tr><td>Endpoint base</td><td>graph.facebook.com/v19.0/act_&lt;id&gt;</td></tr>
+            <tr><td>Dados retornados</td><td>impressões, alcance, frequência, status de entrega</td></tr>
+            <tr><td>Limite</td><td>cota por conta de anúncios</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/metaAds.js</span>
+<span class="chv">async function</span> buscarInsightsAnuncio(adId, token) {
+  <span class="chv">const</span> url = <span class="str">`https://graph.facebook.com/v19.0/${adId}/insights` +
+    `?fields=impressions,reach,frequency` +
+    `&access_token=${token}`</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url);
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+
+  <span class="chv">return</span> dados.data[<span class="str">0</span>] ?? { status: <span class="str">'sem dados ainda'</span> };
+}</pre>
+        </div>
+      </div>
+
+      <!-- Google Analytics -->
+      <div class="painel-integracao" data-painel="analytics">
+        <div class="integracao-info">
+          <h3>Google Analytics (GA4)</h3>
+          <p>Quando o "conteúdo" verificado é uma página do site ou loja do cliente, o adaptador consultaria a Data API do GA4 para trazer dados de tráfego e origem dos acessos — complementando o que as redes sociais mostram com o que de fato chega ao site.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>Conta de serviço Google (OAuth 2.0)</td></tr>
+            <tr><td>Endpoint base</td><td>analyticsdata.googleapis.com/v1beta</td></tr>
+            <tr><td>Dados retornados</td><td>sessões, origem do tráfego, páginas mais vistas</td></tr>
+            <tr><td>Limite</td><td>cota de requisições por propriedade GA4</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/googleAnalytics.js</span>
+<span class="chv">async function</span> buscarTrafego(propertyId, token) {
+  <span class="chv">const</span> url = <span class="str">`https://analyticsdata.googleapis.com/v1beta/` +
+    `properties/${propertyId}:runReport`</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url, {
+    method: <span class="str">'POST'</span>,
+    headers: {
+      <span class="str">'Authorization'</span>: <span class="str">`Bearer ${token}`</span>,
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>
+    },
+    body: JSON.<span class="met">stringify</span>({
+      dateRanges: [{ startDate: <span class="str">'7daysAgo'</span>, endDate: <span class="str">'today'</span> }],
+      dimensions: [{ name: <span class="str">'sessionSource'</span> }],
+      metrics: [{ name: <span class="str">'sessions'</span> }]
+    })
+  });
+
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+  <span class="chv">return</span> dados.rows;
+}</pre>
+        </div>
+      </div>
+
+      <!-- Google Search Console -->
+      <div class="painel-integracao" data-painel="searchconsole">
+        <div class="integracao-info">
+          <h3>Google Search Console</h3>
+          <p>Para conteúdo indexado pelo Google (blog, loja, site), o adaptador consultaria a Search Console API para saber em quais buscas a página aparece, em qual posição média e com qual taxa de cliques — dados que o próprio Google fornece sobre visibilidade orgânica.</p>
+          <table class="tabela-mini">
+            <tr><td>Autenticação</td><td>OAuth 2.0 (propriedade verificada)</td></tr>
+            <tr><td>Endpoint base</td><td>searchconsole.googleapis.com/webmasters/v3</td></tr>
+            <tr><td>Dados retornados</td><td>impressões, posição média, CTR, consultas associadas</td></tr>
+            <tr><td>Limite</td><td>cota diária por propriedade</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// adaptadores/searchConsole.js</span>
+<span class="chv">async function</span> buscarDesempenho(siteUrl, pagina, token) {
+  <span class="chv">const</span> url = <span class="str">`https://searchconsole.googleapis.com/webmasters/v3/` +
+    `sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`</span>;
+
+  <span class="chv">const</span> resposta = <span class="chv">await</span> <span class="met">fetch</span>(url, {
+    method: <span class="str">'POST'</span>,
+    headers: {
+      <span class="str">'Authorization'</span>: <span class="str">`Bearer ${token}`</span>,
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>
+    },
+    body: JSON.<span class="met">stringify</span>({
+      startDate: <span class="str">'2026-06-01'</span>, endDate: <span class="str">'2026-06-13'</span>, <span class="com">// exemplo ilustrativo</span>
+      dimensions: [<span class="str">'query'</span>,<span class="str">'page'</span>],
+      dimensionFilterGroups: [{ filters: [
+        { dimension: <span class="str">'page'</span>, expression: pagina }
+      ]}]
+    })
+  });
+
+  <span class="chv">const</span> dados = <span class="chv">await</span> resposta.json();
+  <span class="chv">return</span> dados.rows ?? [];
+}</pre>
+        </div>
+      </div>
+
+      <p style="margin-top:24px;font-size:.85rem;color:var(--texto-suave);font-family:var(--fonte-mono)">
+        Observação: os trechos acima são exemplos ilustrativos de como cada integração funcionaria, com base na documentação pública de cada plataforma — o ABOT ainda não está implementado.
+      </p>
+    </div>
+  </section>
+
+  <!-- CAPACIDADES ADICIONAIS -->
+  <section class="arquitetura" id="capacidades">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">Capacidades adicionais</span>
+        <h2>Além das APIs: o que mantém o diagnóstico atualizado</h2>
+        <p>Estas três capacidades não dependem de uma única API — elas combinam as integrações anteriores para criar a experiência completa do ABOT.</p>
+      </div>
+
+      <div class="abas-plataforma" id="abas-capacidade">
+        <button class="aba-plataforma ativa" data-capacidade="bots"><span class="bolinha" style="background:var(--roxo)"></span> Bots autônomos</button>
+        <button class="aba-plataforma" data-capacidade="monitoramento"><span class="bolinha" style="background:var(--verde-bot)"></span> Monitoramento contínuo</button>
+        <button class="aba-plataforma" data-capacidade="alertas"><span class="bolinha" style="background:#D85C5C"></span> Detecção de problemas</button>
+      </div>
+
+      <!-- Bots autônomos -->
+      <div class="painel-integracao ativo" data-capacidade-painel="bots">
+        <div class="integracao-info">
+          <h3>Bots autônomos navegando em plataformas</h3>
+          <p>Para o que as APIs oficiais não cobrem — como saber se um post aparece numa busca dentro do próprio app, na visão de um usuário comum — o ABOT propõe bots de navegação automatizada (ex.: Playwright/Puppeteer), que abrem a plataforma, digitam termos de busca e registram o que aparece na tela.</p>
+          <table class="tabela-mini">
+            <tr><td>Tecnologia</td><td>Navegador automatizado (Playwright)</td></tr>
+            <tr><td>Ação</td><td>abrir app/site, buscar termo, rolar resultados</td></tr>
+            <tr><td>Dados retornados</td><td>posição do conteúdo nos resultados, se apareceu ou não</td></tr>
+            <tr><td>Cuidados</td><td>respeitar termos de uso e limites de cada plataforma</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// bots/buscaAutonoma.js</span>
+<span class="chv">async function</span> buscarComoUsuario(termo, idConteudo) {
+  <span class="chv">const</span> navegador = <span class="chv">await</span> playwright.chromium.<span class="met">launch</span>();
+  <span class="chv">const</span> pagina = <span class="chv">await</span> navegador.<span class="met">newPage</span>();
+
+  <span class="chv">await</span> pagina.<span class="met">goto</span>(<span class="str">'https://www.instagram.com/explore/search/'</span>);
+  <span class="chv">await</span> pagina.<span class="met">fill</span>(<span class="str">'input[type="search"]'</span>, termo);
+  <span class="chv">await</span> pagina.<span class="met">waitForSelector</span>(<span class="str">'.resultados'</span>);
+
+  <span class="chv">const</span> resultados = <span class="chv">await</span> pagina.<span class="met">$$eval</span>(
+    <span class="str">'.resultados a'</span>, els => els.<span class="met">map</span>(e => e.href)
+  );
+
+  <span class="chv">await</span> navegador.<span class="met">close</span>();
+  <span class="chv">return</span> { encontrado: resultados.<span class="met">some</span>(r => r.<span class="met">includes</span>(idConteudo)),
+           posicao: resultados.<span class="met">indexOf</span>(idConteudo) + <span class="str">1</span> };
+}</pre>
+        </div>
+      </div>
+
+      <!-- Monitoramento contínuo -->
+      <div class="painel-integracao" data-capacidade-painel="monitoramento">
+        <div class="integracao-info">
+          <h3>Monitoramento contínuo</h3>
+          <p>Em vez de uma verificação única, o usuário poderia agendar varreduras recorrentes (diárias ou semanais). Um job programado repetiria a coleta para o mesmo conteúdo ao longo do tempo, armazenando o histórico para identificar tendências e quedas.</p>
+          <table class="tabela-mini">
+            <tr><td>Tecnologia</td><td>tarefas agendadas (cron / scheduler)</td></tr>
+            <tr><td>Frequência</td><td>diária, semanal ou personalizada</td></tr>
+            <tr><td>Armazenamento</td><td>histórico de métricas por data, em banco de dados</td></tr>
+            <tr><td>Saída</td><td>gráfico de evolução da visibilidade ao longo do tempo</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// monitoramento/agendador.js</span>
+<span class="chv">const</span> cron = <span class="met">require</span>(<span class="str">'node-cron'</span>);
+
+<span class="com">// roda todos os dias às 06:00</span>
+cron.<span class="met">schedule</span>(<span class="str">'0 6 * * *'</span>, <span class="chv">async</span> () => {
+  <span class="chv">const</span> alvos = <span class="chv">await</span> <span class="met">buscarAlvosAtivos</span>();
+
+  <span class="chv">for</span> (<span class="chv">const</span> alvo <span class="chv">of</span> alvos) {
+    <span class="chv">const</span> resultado = <span class="chv">await</span> <span class="met">executarVarredura</span>(alvo);
+    <span class="chv">await</span> <span class="met">salvarHistorico</span>(alvo.id, resultado);
+  }
+});</pre>
+        </div>
+      </div>
+
+      <!-- Detecção automática de problemas -->
+      <div class="painel-integracao" data-capacidade-painel="alertas">
+        <div class="integracao-info">
+          <h3>Detecção automática de problemas algorítmicos</h3>
+          <p>Com o histórico de varreduras, o sistema poderia comparar automaticamente o resultado mais recente com a média dos períodos anteriores. Uma queda brusca de visibilidade dispararia um alerta, sugerindo ao usuário um possível problema de alcance.</p>
+          <table class="tabela-mini">
+            <tr><td>Entrada</td><td>histórico de visibilidade por conteúdo</td></tr>
+            <tr><td>Regra</td><td>queda acima de um limite (ex.: 30% vs. média)</td></tr>
+            <tr><td>Saída</td><td>alerta classificado: atenção ou crítico</td></tr>
+            <tr><td>Uso</td><td>base para o relatório e para contato com a plataforma</td></tr>
+          </table>
+        </div>
+        <div class="integracao-codigo">
+          <div class="topo-codigo"><span></span><span></span><span></span></div>
+          <pre><span class="com">// monitoramento/detectarQueda.js</span>
+<span class="chv">function</span> <span class="met">detectarProblema</span>(historico) {
+  <span class="chv">const</span> atual = historico[historico.length - <span class="str">1</span>].visibilidade;
+  <span class="chv">const</span> anteriores = historico.<span class="met">slice</span>(<span class="str">0</span>, -<span class="str">1</span>);
+  <span class="chv">const</span> media = anteriores.<span class="met">reduce</span>(
+    (s, h) => s + h.visibilidade, <span class="str">0</span>
+  ) / anteriores.length;
+
+  <span class="chv">const</span> queda = (media - atual) / media;
+
+  <span class="chv">if</span> (queda >= <span class="str">0.3</span>) <span class="chv">return</span> <span class="str">'critico'</span>;
+  <span class="chv">if</span> (queda >= <span class="str">0.15</span>) <span class="chv">return</span> <span class="str">'atencao'</span>;
+  <span class="chv">return</span> <span class="str">'normal'</span>;
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESUMO DO MODELO DE NEGÓCIO -->
+  <section id="modelo">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">Modelo de negócio</span>
+        <h2>De onde vem a proposta de valor do ABOT</h2>
+        <p>Resumo do Canvas desenvolvido na disciplina de Mentalidade Criativa e Empreendedora, que guiou as decisões deste projeto.</p>
+      </div>
+      <div class="canvas-resumo">
+        <div class="canvas-card">
+          <h4>Segmento e público</h4>
+          <ul>
+            <li>Pequenas e médias empresas digitais</li>
+            <li>Criadores de conteúdo e influenciadores</li>
+            <li>Gestores de marketing sem equipe de dados</li>
+          </ul>
+        </div>
+        <div class="canvas-card">
+          <h4>Necessidades críticas</h4>
+          <ul>
+            <li>Entender por que o alcance caiu</li>
+            <li>Ter dados organizados, sem jargão técnico</li>
+            <li>Ter evidências para reportar irregularidades</li>
+          </ul>
+        </div>
+        <div class="canvas-card">
+          <h4>Proposta de valor</h4>
+          <ul>
+            <li>Buscas automatizadas como um usuário real</li>
+            <li>Relatórios simples e diretos</li>
+            <li>Base para decisões e contestações às plataformas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARATIVO -->
+  <section class="problema" id="comparativo">
+    <div class="container">
+      <div class="cabecalho-secao">
+        <span class="eyebrow">Comparativo</span>
+        <h2>Ferramentas de SEO são ótimas — só não para isto</h2>
+        <p>SEMrush, Ahrefs e Moz são excelentes para quem precisa de SEO e análise de backlinks. O ABOT propõe resolver um outro problema: entender como um conteúdo se comporta dentro das próprias plataformas sociais.</p>
+      </div>
+      <div class="tabela-wrap">
+        <table class="comparativo">
+          <thead>
+            <tr>
+              <th>Recurso</th>
+              <th>SEMrush / Ahrefs / Moz</th>
+              <th class="col-abot">ABOT (proposta)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Foco principal</td>
+              <td>SEO, backlinks e busca orgânica</td>
+              <td class="col-abot">Visibilidade real em redes sociais e anúncios</td>
+            </tr>
+            <tr>
+              <td>Simula buscas de usuários reais</td>
+              <td class="nao">Limitado</td>
+              <td class="col-abot sim">Sim, via APIs oficiais de cada plataforma</td>
+            </tr>
+            <tr>
+              <td>Relatório em linguagem simples</td>
+              <td class="nao">Voltado a especialistas</td>
+              <td class="col-abot sim">Sim, sem jargão técnico</td>
+            </tr>
+            <tr>
+              <td>Acessível para pequenos negócios</td>
+              <td class="nao">Planos avançados são caros</td>
+              <td class="col-abot sim">Pensado para esse público desde o início</td>
+            </tr>
+            <tr>
+              <td>Evidências para reportar à plataforma</td>
+              <td class="nao">Não é o foco</td>
+              <td class="col-abot sim">Sim, com histórico de varreduras</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="cta-final" id="contato">
+    <div class="container">
+      <span class="eyebrow">Sobre o projeto</span>
+      <h2>O ABOT é uma proposta acadêmica em evolução</h2>
+      <p>Este site apresenta o conceito, a arquitetura e as integrações planejadas para o ABOT. Quer saber mais sobre o desenvolvimento, o Canvas completo ou trocar ideias sobre a proposta?</p>
+      <div class="cta-acoes">
+        <a href="mailto:contato@abot.com.br?subject=Sobre%20o%20projeto%20ABOT" class="btn btn-primario btn-grande">Falar com a equipe</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">
+          <span class="logo-mark"><span></span></span>
+          <span class="logo-texto">ABOT<small>algorithm bot</small></span>
+        </div>
+        <p class="desc">Proposta de automação e inteligência de dados para quem vive das plataformas digitais — apresentada como projeto acadêmico.</p>
+      </div>
+      <div>
+        <h4>O projeto</h4>
+        <ul>
+          <li><a href="#problema">O problema</a></li>
+          <li><a href="#arquitetura">Como funcionaria</a></li>
+          <li><a href="#integracoes">Integrações</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Modelo</h4>
+        <ul>
+          <li><a href="#modelo">Modelo de negócio</a></li>
+          <li><a href="#comparativo">Comparativo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="mailto:contato@abot.com.br">contato@abot.com.br</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-base">
+      <span>© 2026 ABOT · Projeto acadêmico — automação e inteligência de dados para plataformas digitais</span>
+      <span>UniCesumar, Engenharia de Software</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ============================================================
+  // Diagrama "Como funcionaria" — etapas clicáveis
+  // ============================================================
+  (function(){
+    var etapas = document.querySelectorAll('.diagrama-etapa');
+    var detalhes = document.querySelectorAll('.detalhe-etapa');
+
+    etapas.forEach(function(etapa){
+      etapa.addEventListener('click', function(){
+        var n = etapa.dataset.etapa;
+        etapas.forEach(function(e){ e.classList.toggle('ativo', e === etapa); });
+        detalhes.forEach(function(d){ d.classList.toggle('ativo', d.dataset.detalhe === n); });
+      });
+    });
+  })();
+
+  // ============================================================
+  // Abas de integração por plataforma
+  // ============================================================
+  (function(){
+    var abas = document.querySelectorAll('#abas-plataforma .aba-plataforma');
+    var paineis = document.querySelectorAll('[data-painel]');
+
+    abas.forEach(function(aba){
+      aba.addEventListener('click', function(){
+        var alvo = aba.dataset.plataforma;
+        abas.forEach(function(a){ a.classList.toggle('ativa', a === aba); });
+        paineis.forEach(function(p){ p.classList.toggle('ativo', p.dataset.painel === alvo); });
+      });
+    });
+  })();
+
+  // ============================================================
+  // Abas de "Capacidades adicionais"
+  // ============================================================
+  (function(){
+    var abas = document.querySelectorAll('#abas-capacidade .aba-plataforma');
+    var paineis = document.querySelectorAll('[data-capacidade-painel]');
+
+    abas.forEach(function(aba){
+      aba.addEventListener('click', function(){
+        var alvo = aba.dataset.capacidade;
+        abas.forEach(function(a){ a.classList.toggle('ativa', a === aba); });
+        paineis.forEach(function(p){ p.classList.toggle('ativo', p.dataset.capacidadePainel === alvo); });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
