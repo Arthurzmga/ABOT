@@ -104,7 +104,7 @@
   .diagrama-etapa p{font-size:.86rem;color:#BFE0D2}
   .diagrama-etapa::after{
     content:'→';position:absolute;top:50%;right:-12px;transform:translateY(-50%);
-    color:#7FE0AC;font-size:1.1rem;z-index:2;
+    color:#7FE0AC;font-size:1.1rem;
   }
   .diagrama-etapa:last-child::after{display:none}
 
@@ -188,7 +188,7 @@
   .footer-base{border-top:1px solid rgba(255,255,255,.08);padding-top:24px;font-size:.82rem;color:var(--footer-texto-fraco);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
 
   /* ===== CAPACIDADES — painéis sobre fundo escuro mantêm texto cinza ===== */
-  #capacidades .painel-integracao{color:var(--texto)}
+  #capacidades .painel-integracao.ativo{color:var(--texto)}
   #capacidades .integracao-info h3{color:var(--verde-escuro)}
   #capacidades .integracao-info p,
   #capacidades .tabela-mini td{color:var(--texto-suave)}
@@ -397,10 +397,12 @@
           <h3>Meta Graph API (Instagram)</h3>
           <p>Para verificar a presença de um post ou perfil, o adaptador usaria a Graph API da Meta, autenticada via token de acesso vinculado a uma conta de negócios do Instagram conectada a uma página do Facebook.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>OAuth 2.0 + token de longa duração (conta business)</td></tr>
             <tr><td>Endpoint base</td><td>graph.facebook.com/v19.0</td></tr>
             <tr><td>Dados retornados</td><td>alcance, impressões, engajamento do post</td></tr>
             <tr><td>Limite</td><td>cota de chamadas por hora por aplicativo</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -430,10 +432,12 @@
           <h3>TikTok for Developers</h3>
           <p>O adaptador do TikTok usaria a API oficial de desenvolvedores para consultar vídeos públicos de uma conta e suas métricas básicas, autenticando via OAuth 2.0 com escopo de leitura de vídeos.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>OAuth 2.0 (escopo video.list)</td></tr>
             <tr><td>Endpoint base</td><td>open.tiktokapis.com/v2</td></tr>
             <tr><td>Dados retornados</td><td>visualizações, curtidas, compartilhamentos</td></tr>
             <tr><td>Limite</td><td>cota diária por aplicativo registrado</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -467,10 +471,12 @@
           <h3>YouTube Data API v3</h3>
           <p>Para verificar se um vídeo aparece em uma busca, o adaptador chamaria o endpoint de busca pública da API, comparando o ID do vídeo do cliente com os resultados retornados para os termos informados.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>API key (chave de aplicação)</td></tr>
             <tr><td>Endpoint base</td><td>www.googleapis.com/youtube/v3</td></tr>
             <tr><td>Dados retornados</td><td>posição na busca, visualizações, curtidas</td></tr>
             <tr><td>Limite</td><td>cota diária de "unidades" por chave</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -499,10 +505,12 @@
           <h3>Meta Marketing API (anúncios)</h3>
           <p>Para anúncios, o adaptador consultaria diretamente os insights da campanha vinculada à conta de anúncios do cliente, trazendo dados oficiais de entrega — úteis para comparar com o que o usuário percebe no dia a dia.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>OAuth 2.0 (conta de anúncios)</td></tr>
             <tr><td>Endpoint base</td><td>graph.facebook.com/v19.0/act_&lt;id&gt;</td></tr>
             <tr><td>Dados retornados</td><td>impressões, alcance, frequência, status de entrega</td></tr>
             <tr><td>Limite</td><td>cota por conta de anúncios</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -527,10 +535,12 @@
           <h3>Google Analytics (GA4)</h3>
           <p>Quando o "conteúdo" verificado é uma página do site ou loja do cliente, o adaptador consultaria a Data API do GA4 para trazer dados de tráfego e origem dos acessos — complementando o que as redes sociais mostram com o que de fato chega ao site.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>Conta de serviço Google (OAuth 2.0)</td></tr>
             <tr><td>Endpoint base</td><td>analyticsdata.googleapis.com/v1beta</td></tr>
             <tr><td>Dados retornados</td><td>sessões, origem do tráfego, páginas mais vistas</td></tr>
             <tr><td>Limite</td><td>cota de requisições por propriedade GA4</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -565,10 +575,12 @@
           <h3>Google Search Console</h3>
           <p>Para conteúdo indexado pelo Google (blog, loja, site), o adaptador consultaria a Search Console API para saber em quais buscas a página aparece, em qual posição média e com qual taxa de cliques — dados que o próprio Google fornece sobre visibilidade orgânica.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Autenticação</td><td>OAuth 2.0 (propriedade verificada)</td></tr>
             <tr><td>Endpoint base</td><td>searchconsole.googleapis.com/webmasters/v3</td></tr>
             <tr><td>Dados retornados</td><td>impressões, posição média, CTR, consultas associadas</td></tr>
             <tr><td>Limite</td><td>cota diária por propriedade</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -626,10 +638,12 @@
           <h3>Bots autônomos navegando em plataformas</h3>
           <p>Para o que as APIs oficiais não cobrem — como saber se um post aparece numa busca dentro do próprio app, na visão de um usuário comum — o ABOT propõe bots de navegação automatizada (ex.: Playwright/Puppeteer), que abrem a plataforma, digitam termos de busca e registram o que aparece na tela.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Tecnologia</td><td>Navegador automatizado (Playwright)</td></tr>
             <tr><td>Ação</td><td>abrir app/site, buscar termo, rolar resultados</td></tr>
             <tr><td>Dados retornados</td><td>posição do conteúdo nos resultados, se apareceu ou não</td></tr>
             <tr><td>Cuidados</td><td>respeitar termos de uso e limites de cada plataforma</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -660,10 +674,12 @@
           <h3>Monitoramento contínuo</h3>
           <p>Em vez de uma verificação única, o usuário poderia agendar varreduras recorrentes (diárias ou semanais). Um job programado repetiria a coleta para o mesmo conteúdo ao longo do tempo, armazenando o histórico para identificar tendências e quedas.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Tecnologia</td><td>tarefas agendadas (cron / scheduler)</td></tr>
             <tr><td>Frequência</td><td>diária, semanal ou personalizada</td></tr>
             <tr><td>Armazenamento</td><td>histórico de métricas por data, em banco de dados</td></tr>
             <tr><td>Saída</td><td>gráfico de evolução da visibilidade ao longo do tempo</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
@@ -689,10 +705,12 @@ cron.<span class="met">schedule</span>(<span class="str">'0 6 * * *'</span>, <sp
           <h3>Detecção automática de problemas algorítmicos</h3>
           <p>Com o histórico de varreduras, o sistema poderia comparar automaticamente o resultado mais recente com a média dos períodos anteriores. Uma queda brusca de visibilidade dispararia um alerta, sugerindo ao usuário um possível problema de alcance.</p>
           <table class="tabela-mini">
+          <tbody>
             <tr><td>Entrada</td><td>histórico de visibilidade por conteúdo</td></tr>
             <tr><td>Regra</td><td>queda acima de um limite (ex.: 30% vs. média)</td></tr>
             <tr><td>Saída</td><td>alerta classificado: atenção ou crítico</td></tr>
             <tr><td>Uso</td><td>base para o relatório e para contato com a plataforma</td></tr>
+          </tbody>
           </table>
         </div>
         <div class="integracao-codigo">
